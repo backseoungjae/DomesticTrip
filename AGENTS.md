@@ -1,41 +1,38 @@
-This is an Expo/React Native mobile application. Prioritize mobile-first patterns, performance, and cross-platform compatibility.
+# DomesticTrip — AGENTS
 
-## Expo has changed — do not trust your training data
+Codex가 DomesticTrip 코드를 수정할 때 참고하는 개발 규칙이다. 기능과 화면의 기준은 `PRODUCT_SPEC.md`, 단계별 작업 지시는 `CODEX_PHASES.md`를 따른다.
 
-Expo ships breaking changes every SDK release. APIs you remember are likely renamed, moved, or removed. Before writing any code that touches an Expo, EAS, or React Native API:
+## 1. 구조와 네이밍
 
-1. Read the major version of the `expo` package in `package.json`.
-2. Fetch the matching versioned docs: `https://docs.expo.dev/versions/v<major>.0.0/`
-3. For anything else, fetch https://docs.expo.dev/llms.txt — an index of all Expo docs with corrections to common LLM misconceptions. Follow its links to the specific page you need; never answer from memory.
+- Expo Router의 `app/`에는 화면 진입점과 라우팅에 필요한 코드만 둔다.
+- 기능 단위로 `src/features/trips/`, `src/features/places/`를 나눈다. `domain`, `services`, `repositories`, `hooks`, `ui` 등은 필요한 경우에만 만든다.
+- 공통 UI·디자인 토큰·언어 설정은 `src/shared/`, SQLite 관련 코드는 `src/database/`에서 관리한다.
+- Hooks·함수·변수는 `camelCase`, 화면·컴포넌트·타입은 `PascalCase`를 사용한다.
+- 화면 컴포넌트에서 SQL을 실행하거나 TourAPI 응답을 직접 가공하지 않는다. 데이터 접근과 변환은 해당 기능의 계층에서 처리한다.
+- 작은 기능에 과도한 계층이나 추상화를 추가하지 않는다.
 
-## Commands
+## 2. 핵심 데이터 정책
 
-Use `bunx` instead of `npx` if the project uses bun (`bun.lock` present).
+- SQLite는 사용자가 만든 여행과 일정의 저장소다. 외부 관광정보의 조회 캐시와 구분한다.
+- 날짜는 `YYYY-MM-DD`로 관리하고, 오늘·여행 상태 판단은 `Asia/Seoul`을 기준으로 한다.
+- 새 여행에는 과거 날짜를 선택할 수 없지만, 기존 여행과 지난 여행은 수정할 수 있다.
+- 날짜 변경·장소 이동·순서 변경·삭제 때문에 사용자의 기존 일정이 안내 없이 사라지지 않도록 한다.
+- 한국어·영어 TourAPI 응답은 공통 관광지 모델로 변환한다. 서로 다른 언어의 관광지가 같은 ID를 가진다고 가정하지 않는다.
+- 저장한 장소에는 원본 언어와 식별자, 표시할 때 필요한 최소한의 장소 정보를 함께 남긴다. API 오류나 언어 변경으로 저장된 일정을 임의 삭제하거나 번역하지 않는다.
 
-```bash
-npx expo install <package>  # ALWAYS use instead of npm/yarn/pnpm/bun add — resolves SDK-compatible versions
-npx expo start              # start the dev server
-npx expo lint               # lint
-npx tsc --noEmit            # typecheck
-npx expo-doctor             # diagnose dependency and config issues
-npx expo install --fix      # fix incompatible package versions
-```
+## 3. UX·i18n·접근성
 
-Run lint and typecheck before declaring any task done.
+- 기기 언어가 한국어면 `ko`, 영어면 `en`, 그 외에는 `en`을 기본값으로 사용한다. 사용자가 선택한 언어는 재실행 후에도 유지한다.
+- UI 문구는 i18next 번역 리소스로 관리한다. 사용자가 작성한 제목과 관광지 원문은 임의 번역하지 않는다.
+- 여러 화면에서 반복되는 UI는 디자인 토큰과 공통 컴포넌트를 활용한다.
+- 로딩·빈 결과·오류 상태에서 사용자가 다음에 무엇을 할 수 있는지 알 수 있게 한다.
+- 화면은 글자 확대와 스크린 리더를 고려한다. 달력·모달·장소 순서 변경에는 접근 가능한 조작 방법을 제공한다.
 
-## Navigation & Routing
+## 4. TourAPI·환경변수·안정성
 
-- Use **Expo Router** for all navigation. Routes live in `src/app/` — every file there is a screen, `_layout.tsx` files define navigators. Keep non-route code (components, hooks, utils) outside `src/app/`.
-- Import `Link`, `router`, and `useLocalSearchParams` from `expo-router`.
-- Docs: https://docs.expo.dev/router/introduction.md
-
-## Building with EAS
-
-Use EAS to build, sign, and submit the app in the cloud (`eas build`, `eas submit`) and to ship over-the-air updates (`eas update`) — no local Xcode or Android Studio required. Run EAS CLI as `bunx eas-cli <command>` in Bun projects, or `npx eas-cli@latest <command>` otherwise; substitute that for bare `eas` in docs examples.
-Docs: https://docs.expo.dev/eas/index.md
-
-## Rules
-
-- If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
-- Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
-- Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
+- 국내 관광정보는 한국관광공사 TourAPI의 `KorService2`, `EngService2`를 이용한다. 요청 파라미터는 사용 중인 문서와 실제 응답을 확인한다.
+- API 키 환경변수명은 `EXPO_PUBLIC_TOUR_API_KEY`다. `EXPO_PUBLIC_*` 값은 앱에 포함되어 노출될 수 있으므로 비밀 보관 수단으로 취급하지 않는다.
+- 실제 API 키, 인증 정보, 사용자 여행 상세 내용은 로그·문서·커밋에 남기지 않는다.
+- JSON 응답뿐 아니라 XML 오류, 인증 실패, 호출 한도 초과, 빈 결과를 구분해서 처리한다.
+- TanStack Query의 캐시 키에는 언어·검색어·필터·페이지 등 요청 조건을 반영한다.
+- API 호출이 실패하더라도 SQLite에 저장된 여행은 사용할 수 있어야 한다.
