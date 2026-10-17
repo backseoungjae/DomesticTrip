@@ -2,6 +2,8 @@
 
 Codex가 DomesticTrip 코드를 수정할 때 참고하는 개발 규칙이다. 기능과 화면의 기준은 `PRODUCT_SPEC.md`, 단계별 작업 지시는 `CODEX_PHASES.md`를 따른다.
 
+Phase 작업 결과는 대화로 보고하며, 보고용 `PHASE*.md` 파일을 새로 만들지 않는다.
+
 ## 1. 구조와 네이밍
 
 - Expo Router의 `app/`에는 화면 진입점과 라우팅에 필요한 코드만 둔다.
