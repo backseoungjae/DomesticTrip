@@ -1,5 +1,1 @@
-import { DetailPlaceholder } from '@/shared/DetailPlaceholder';
-
-export default function CreateTripRoute() {
-  return <DetailPlaceholder kind="create" />;
-}
+export { TripFormScreen as default } from '@/features/trips/TripFormScreen';

@@ -2,6 +2,8 @@ import type { PropsWithChildren } from 'react';
 import {
   ActivityIndicator,
   Pressable,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -35,9 +37,18 @@ export function Screen({ children }: PropsWithChildren) {
       edges={['top', 'left', 'right']}
       style={[styles.screen, { backgroundColor: colors.background }]}
     >
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.column}>{children}</View>
-      </ScrollView>
+      <KeyboardAvoidingView
+        style={styles.screen}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+        >
+          <View style={styles.column}>{children}</View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -66,10 +77,11 @@ export function Button({
   label,
   secondary = false,
   busy = false,
+  destructive = false,
   disabled,
   style,
   ...props
-}: PressableProps & { label: string; secondary?: boolean; busy?: boolean }) {
+}: PressableProps & { label: string; secondary?: boolean; busy?: boolean; destructive?: boolean }) {
   const colors = useColors();
   return (
     <Pressable
@@ -79,7 +91,7 @@ export function Button({
       disabled={disabled || busy}
       style={(state) => [
         styles.button,
-        { backgroundColor: secondary ? colors.tint : colors.primary },
+        { backgroundColor: destructive ? colors.danger : secondary ? colors.tint : colors.primary },
         (state.pressed || disabled || busy) && styles.dim,
         typeof style === 'function' ? style(state) : style,
       ]}
@@ -95,12 +107,22 @@ export function Button({
   );
 }
 
-export function BackButton({ label, onPress }: { label: string; onPress: PressableProps['onPress'] }) {
+export function BackButton({
+  label,
+  onPress,
+  disabled = false,
+}: {
+  label: string;
+  onPress: PressableProps['onPress'];
+  disabled?: boolean;
+}) {
   const colors = useColors();
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
+      accessibilityState={{ disabled }}
+      disabled={disabled}
       onPress={onPress}
       hitSlop={spacing.sm}
       style={({ pressed }) => [
@@ -108,10 +130,7 @@ export function BackButton({ label, onPress }: { label: string; onPress: Pressab
         { backgroundColor: pressed ? colors.tint : 'transparent' },
       ]}
     >
-      <View
-        accessible={false}
-        style={[styles.backIcon, { borderColor: colors.primary }]}
-      />
+      <View accessible={false} style={[styles.backIcon, { borderColor: colors.primary }]} />
     </Pressable>
   );
 }

@@ -1,5 +1,8 @@
-import { DetailPlaceholder } from '@/shared/DetailPlaceholder';
+import { useLocalSearchParams } from 'expo-router';
+
+import { EditTripScreen } from '@/features/trips/TripFormScreen';
 
 export default function EditTripRoute() {
-  return <DetailPlaceholder kind="edit" />;
+  const { tripId } = useLocalSearchParams<{ tripId: string }>();
+  return <EditTripScreen tripId={tripId} />;
 }

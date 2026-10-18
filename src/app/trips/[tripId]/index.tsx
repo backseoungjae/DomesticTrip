@@ -1,8 +1,8 @@
 import { useLocalSearchParams } from 'expo-router';
 
-import { DetailPlaceholder } from '@/shared/DetailPlaceholder';
+import { TripOverviewScreen } from '@/features/trips/TripOverviewScreen';
 
 export default function TripDetailRoute() {
   const { tripId } = useLocalSearchParams<{ tripId: string }>();
-  return <DetailPlaceholder kind="trip" tripId={tripId} />;
+  return <TripOverviewScreen tripId={tripId} />;
 }
