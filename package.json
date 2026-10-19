@@ -5,6 +5,7 @@
   "dependencies": {
     "@expo/ui": "~58.0.20",
     "@react-native-community/datetimepicker": "9.2.1",
+    "@tanstack/react-query": "^5",
     "expo": "~58.0.14",
     "expo-constants": "~58.0.12",
     "expo-crypto": "~58.0.7",

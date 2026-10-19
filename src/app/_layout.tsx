@@ -7,6 +7,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { LanguageProvider } from '@/shared/i18n/LanguageProvider';
 import { languageStorage } from '@/shared/i18n/languageStorage';
+import { QueryProvider } from '@/shared/query/QueryProvider';
 import { useColors } from '@/shared/theme';
 
 export const unstable_settings = { anchor: '(tabs)' };
@@ -21,15 +22,17 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <LanguageProvider storage={languageStorage}>
-          <StatusBar style="auto" />
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              contentStyle: { backgroundColor: colors.background },
-            }}
-          >
-            <Stack.Screen name="(tabs)" />
-          </Stack>
+          <QueryProvider>
+            <StatusBar style="auto" />
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                contentStyle: { backgroundColor: colors.background },
+              }}
+            >
+              <Stack.Screen name="(tabs)" />
+            </Stack>
+          </QueryProvider>
         </LanguageProvider>
       </ThemeProvider>
     </SafeAreaProvider>
