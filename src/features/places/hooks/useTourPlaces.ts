@@ -57,8 +57,8 @@ export function tourDetailOptions(language: TourLocale, contentId: string) {
   });
 }
 
-export function useTourPlaces(request: TourListRequest) {
-  return useQuery(tourListOptions(request));
+export function useTourPlaces(request: TourListRequest, enabled = true) {
+  return useQuery({ ...tourListOptions(request), enabled });
 }
 
 export function useTourPlaceSearch(request: TourSearchRequest) {

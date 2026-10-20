@@ -12,6 +12,13 @@ import type { Trip, TripPlace } from '@/features/trips/domain/types';
 import { readDatabase, writeDatabase } from './client';
 import { readTripPlaces, requireTrip, type StoredTripPlace } from './records';
 
+export class DuplicateTripPlaceError extends Error {
+  constructor(readonly days: readonly number[]) {
+    super('Place already exists in this trip');
+    this.name = 'DuplicateTripPlaceError';
+  }
+}
+
 function validateSnapshot(snapshot: TourPlace): void {
   if (
     !snapshot.contentId.trim() ||
@@ -107,12 +114,13 @@ export const tripPlaceRepository = {
     return readDatabase(async (db) => readTripPlaces(db, await requireTrip(db, tripId)));
   },
 
-  /** Append at the end of the selected Day; repeated tourism content is allowed. */
+  /** Append to the selected Day; repeated content requires explicit confirmation. */
   add(
     tripId: string,
     id: string,
     dayNumber: number,
     snapshot: TourPlace,
+    allowDuplicate = false,
   ): Promise<StoredTripPlace[]> {
     // Copy before waiting in the queue, so later changes to an API result cannot
     // change the snapshot that the user chose to save.
@@ -122,6 +130,14 @@ export const tripPlaceRepository = {
       validateSnapshot(placeSnapshot);
       const trip = await requireTrip(db, tripId);
       const before = await readTripPlaces(db, trip);
+      const duplicates = before.filter(
+        (entry) =>
+          entry.placeSnapshot.sourceLanguage === placeSnapshot.sourceLanguage &&
+          entry.placeSnapshot.contentId === placeSnapshot.contentId,
+      );
+      if (duplicates.length && !allowDuplicate) {
+        throw new DuplicateTripPlaceError([...new Set(duplicates.map((entry) => entry.dayNumber))]);
+      }
       const after = addTripPlace(trip, before, { id, tripId, dayNumber, placeSnapshot });
       return persistPlaces(db, trip, before, after);
     });

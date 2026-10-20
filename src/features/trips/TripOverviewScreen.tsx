@@ -11,9 +11,17 @@ import { AppText, BackButton, Button, Card, PageHeading, Screen } from '@/shared
 import { getTripDayCount, getTripStatus } from './domain/trip';
 import { useSeoulToday, useTripDetail } from './hooks/useTrips';
 import { TripFeedback } from './ui/TripFeedback';
+import { TripDayPicker } from './ui/TripDayPicker';
+import { PlaceImage } from '@/features/places/ui/PlaceImage';
 import { formatTripDate } from './ui/tripDate';
 
-export function TripOverviewScreen({ tripId }: { tripId: string }) {
+export function TripOverviewScreen({
+  tripId,
+  initialDay = 1,
+}: {
+  tripId: string;
+  initialDay?: number;
+}) {
   const { t, i18n } = useTranslation();
   const { data, loading, error, retry } = useTripDetail(tripId);
   const today = useSeoulToday();
@@ -21,6 +29,13 @@ export function TripOverviewScreen({ tripId }: { tripId: string }) {
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState(false);
+  const [selectedDay, setSelectedDay] = useState(initialDay);
+  const day = data
+    ? Math.max(
+        1,
+        Math.min(Number.isSafeInteger(selectedDay) ? selectedDay : 1, getTripDayCount(data.trip)),
+      )
+    : 1;
   const deletingRef = useRef(false);
   const disablePrevention = usePreventRemove(deleting);
   const back = () => (router.canGoBack() ? router.back() : router.replace('/my-trips'));
@@ -72,6 +87,47 @@ export function TripOverviewScreen({ tripId }: { tripId: string }) {
             <AppText muted>{t('tripFlow.duration', { count: getTripDayCount(data.trip) })}</AppText>
             <AppText muted>{t('tripFlow.placeCount', { count: data.places.length })}</AppText>
           </Card>
+          <TripDayPicker
+            trip={data.trip}
+            value={day}
+            disabled={deleting}
+            onChange={setSelectedDay}
+          />
+          <Button
+            label={t('places.add')}
+            disabled={deleting}
+            onPress={() =>
+              router.push({ pathname: '/places/explore', params: { tripId, day: String(day) } })
+            }
+          />
+          <AppText variant="heading" accessibilityRole="header">
+            {t('places.savedPlaces')}
+          </AppText>
+          {data.places.filter((entry) => entry.dayNumber === day).length === 0 && (
+            <AppText muted>{t('tripFlow.noPlaces')}</AppText>
+          )}
+          {data.places
+            .filter((entry) => entry.dayNumber === day)
+            .map((entry) => (
+              <Card key={entry.id}>
+                <AppText variant="heading">
+                  {entry.position}. {entry.placeSnapshot.title}
+                </AppText>
+                <PlaceImage
+                  uri={entry.placeSnapshot.imageUrl}
+                  title={entry.placeSnapshot.title}
+                  copyright={entry.placeSnapshot.copyright}
+                />
+                {!!entry.placeSnapshot.address && <AppText>{entry.placeSnapshot.address}</AppText>}
+                <AppText variant="caption" muted>
+                  {t(
+                    entry.placeSnapshot.sourceLanguage === 'ko'
+                      ? 'places.sourceKo'
+                      : 'places.sourceEn',
+                  )}
+                </AppText>
+              </Card>
+            ))}
           <Button
             label={t('tripFlow.edit')}
             disabled={deleting}

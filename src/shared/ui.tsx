@@ -1,4 +1,4 @@
-import type { PropsWithChildren } from 'react';
+import type { ComponentRef, PropsWithChildren, Ref } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -30,7 +30,10 @@ export function AppText({
   );
 }
 
-export function Screen({ children }: PropsWithChildren) {
+export function Screen({
+  children,
+  scrollRef,
+}: PropsWithChildren<{ scrollRef?: Ref<ComponentRef<typeof ScrollView>> }>) {
   const colors = useColors();
   return (
     <SafeAreaView
@@ -42,6 +45,7 @@ export function Screen({ children }: PropsWithChildren) {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView
+          ref={scrollRef}
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
@@ -79,6 +83,7 @@ export function Button({
   busy = false,
   destructive = false,
   disabled,
+  accessibilityState,
   style,
   ...props
 }: PressableProps & { label: string; secondary?: boolean; busy?: boolean; destructive?: boolean }) {
@@ -87,7 +92,7 @@ export function Button({
     <Pressable
       {...props}
       accessibilityRole="button"
-      accessibilityState={{ disabled: disabled || busy, busy }}
+      accessibilityState={{ ...accessibilityState, disabled: disabled || busy, busy }}
       disabled={disabled || busy}
       style={(state) => [
         styles.button,

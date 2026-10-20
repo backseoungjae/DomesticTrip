@@ -1,6 +1,7 @@
 import type { TourCategory, TourLocale, TourPlace, TourPlaceDetail } from '../domain/TourPlace';
 
 import { TourApiError } from './tourApiError';
+import { tourText } from './tourText';
 
 // 국문/영문 활용매뉴얼 v4.4: a category absent in a locale is not substituted.
 export const contentTypeIds: Record<TourLocale, Partial<Record<TourCategory, string>>> = {
@@ -97,7 +98,7 @@ export function mapTourPlaceDetail(
 ): TourPlaceDetail {
   return {
     ...mapTourPlace(item, language),
-    overview: optionalText(item, 'overview'),
+    overview: tourText(optionalText(item, 'overview')),
     homepage: optionalText(item, 'homepage'),
     telephone: optionalText(item, 'tel'),
   };
