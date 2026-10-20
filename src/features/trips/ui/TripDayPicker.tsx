@@ -13,37 +13,21 @@ export function TripDayPicker({
   value,
   onChange,
   disabled = false,
-  showDays = false,
 }: {
   trip: TripDetails;
   value: number;
   onChange: (value: number) => void;
   disabled?: boolean;
-  showDays?: boolean;
 }) {
   const { t, i18n } = useTranslation();
   const count = getTripDayCount(trip);
   return (
     <View style={{ gap: spacing.sm }}>
-      {showDays && <DayStrip count={count} value={value} disabled={disabled} onChange={onChange} />}
       <AppText variant="heading" accessibilityRole="header" accessibilityLiveRegion="polite">
         {t('tripFlow.day', { number: value })} ·{' '}
         {formatTripDate(getTripDayDate(trip, value), i18n.language)}
       </AppText>
-      <View style={{ flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' }}>
-        <Button
-          secondary
-          label={t('places.previousDay')}
-          disabled={disabled || value <= 1}
-          onPress={() => onChange(value - 1)}
-        />
-        <Button
-          secondary
-          label={t('places.nextDay')}
-          disabled={disabled || value >= count}
-          onPress={() => onChange(value + 1)}
-        />
-      </View>
+      <DayStrip count={count} value={value} disabled={disabled} onChange={onChange} />
     </View>
   );
 }

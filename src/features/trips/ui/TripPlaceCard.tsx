@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
-import { View } from 'react-native';
+import { useRef, type ComponentRef, type RefObject } from 'react';
+import { Pressable, View } from 'react-native';
 
 import { PlaceImage } from '@/features/places/ui/PlaceImage';
 import { spacing } from '@/shared/theme';
@@ -9,64 +10,97 @@ import type { TripPlace } from '../domain/types';
 export function TripPlaceCard({
   entry,
   count,
-  dayCount,
   disabled,
+  isActive,
+  onDrag,
+  onDragEnd,
   onUp,
   onDown,
-  onMove,
-  onRemove,
+  onMore,
 }: {
   entry: TripPlace;
   count: number;
-  dayCount: number;
   disabled: boolean;
+  isActive: boolean;
+  onDrag: () => void;
+  onDragEnd: () => void;
   onUp: () => void;
   onDown: () => void;
-  onMove: () => void;
-  onRemove: () => void;
+  onMore: (trigger: RefObject<ComponentRef<typeof View> | null>) => void;
 }) {
   const { t } = useTranslation();
   const place = entry.placeSnapshot;
+  const moreButton = useRef<ComponentRef<typeof View>>(null);
+  // Keep the active touch responder alive until DragList receives the release.
+  const cannotDrag = (disabled && !isActive) || count < 2;
+  const actionsDisabled = disabled || isActive || count < 2;
+  const position = t('itinerary.position', {
+    day: entry.dayNumber,
+    position: entry.position,
+    count,
+  });
   return (
-    <Card>
-      <AppText variant="heading" accessibilityRole="header">
-        {entry.position}. {place.title}
-      </AppText>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
-        <Button
-          secondary
-          label={t('itinerary.up')}
-          accessibilityLabel={t('itinerary.upLabel', { title: place.title })}
-          disabled={disabled || entry.position === 1}
-          onPress={onUp}
-        />
-        <Button
-          secondary
-          label={t('itinerary.down')}
-          accessibilityLabel={t('itinerary.downLabel', { title: place.title })}
-          disabled={disabled || entry.position === count}
-          onPress={onDown}
-        />
-      </View>
-      <Button
-        secondary
-        label={t('itinerary.move')}
-        accessibilityLabel={t('itinerary.moveLabel', { title: place.title })}
-        disabled={disabled || dayCount < 2}
-        onPress={onMove}
-      />
-      <Button
-        destructive
-        label={t('itinerary.remove')}
-        accessibilityLabel={t('itinerary.removeLabel', { title: place.title })}
-        disabled={disabled}
-        onPress={onRemove}
-      />
-      <PlaceImage uri={place.imageUrl} title={place.title} copyright={place.copyright} />
-      {!!place.address && <AppText>{place.address}</AppText>}
-      <AppText variant="caption" muted>
-        {t(place.sourceLanguage === 'ko' ? 'places.sourceKo' : 'places.sourceEn')}
-      </AppText>
-    </Card>
+    <View style={{ opacity: isActive ? 0.85 : 1 }}>
+      <Card>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm }}>
+          <Pressable
+            style={{ flex: 1 }}
+            onLongPress={onDrag}
+            onPressOut={onDragEnd}
+            delayLongPress={300}
+            disabled={cannotDrag}
+            accessibilityRole="adjustable"
+            accessibilityLabel={place.title}
+            accessibilityHint={t('itinerary.dragAccessibilityHint')}
+            accessibilityValue={{ text: position }}
+            accessibilityState={{ disabled: actionsDisabled }}
+            accessibilityActions={
+              actionsDisabled
+                ? []
+                : [
+                    ...(entry.position > 1
+                      ? [{ name: 'decrement', label: t('itinerary.up') }]
+                      : []),
+                    ...(entry.position < count
+                      ? [{ name: 'increment', label: t('itinerary.down') }]
+                      : []),
+                  ]
+            }
+            onAccessibilityAction={({ nativeEvent }) => {
+              if (actionsDisabled) return;
+              if (nativeEvent.actionName === 'decrement' && entry.position > 1) onUp();
+              if (nativeEvent.actionName === 'increment' && entry.position < count) onDown();
+            }}
+          >
+            <AppText variant="heading" accessible={false} importantForAccessibility="no">
+              {entry.position}. {place.title}
+            </AppText>
+          </Pressable>
+          <Button
+            ref={moreButton}
+            secondary
+            label="⋯"
+            accessibilityLabel={t('itinerary.moreLabel', { title: place.title })}
+            disabled={disabled || isActive}
+            style={{ minHeight: 48, width: 48, paddingVertical: 0, paddingHorizontal: 0 }}
+            onPress={() => onMore(moreButton)}
+          />
+        </View>
+        <Pressable
+          accessible={false}
+          disabled={cannotDrag}
+          onLongPress={onDrag}
+          onPressOut={onDragEnd}
+          delayLongPress={300}
+          style={{ gap: spacing.md }}
+        >
+          <PlaceImage uri={place.imageUrl} title={place.title} copyright={place.copyright} />
+          {!!place.address && <AppText>{place.address}</AppText>}
+          <AppText variant="caption" muted>
+            {t(place.sourceLanguage === 'ko' ? 'places.sourceKo' : 'places.sourceEn')}
+          </AppText>
+        </Pressable>
+      </Card>
+    </View>
   );
 }

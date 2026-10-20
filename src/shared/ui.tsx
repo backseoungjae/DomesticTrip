@@ -1,4 +1,4 @@
-import type { ComponentRef, PropsWithChildren, Ref } from 'react';
+import type { ComponentRef, PropsWithChildren, ReactNode, Ref } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -20,7 +20,11 @@ export function AppText({
   muted = false,
   style,
   ...props
-}: TextProps & { variant?: keyof typeof typography; muted?: boolean }) {
+}: TextProps & {
+  ref?: Ref<ComponentRef<typeof Text>>;
+  variant?: keyof typeof typography;
+  muted?: boolean;
+}) {
   const colors = useColors();
   return (
     <Text
@@ -33,7 +37,8 @@ export function AppText({
 export function Screen({
   children,
   scrollRef,
-}: PropsWithChildren<{ scrollRef?: Ref<ComponentRef<typeof ScrollView>> }>) {
+  footer,
+}: PropsWithChildren<{ scrollRef?: Ref<ComponentRef<typeof ScrollView>>; footer?: ReactNode }>) {
   const colors = useColors();
   return (
     <SafeAreaView
@@ -53,9 +58,54 @@ export function Screen({
           <View style={styles.column}>{children}</View>
         </ScrollView>
       </KeyboardAvoidingView>
+      {footer && <FixedFooter>{footer}</FixedFooter>}
     </SafeAreaView>
   );
 }
+
+/** A virtualized list owns scrolling; do not nest it in Screen's ScrollView. */
+export function ListScreen({ children, footer }: PropsWithChildren<{ footer?: ReactNode }>) {
+  const colors = useColors();
+  return (
+    <SafeAreaView
+      edges={['top', 'left', 'right']}
+      style={[styles.screen, { backgroundColor: colors.background }]}
+    >
+      {children}
+      {footer && <FixedFooter>{footer}</FixedFooter>}
+    </SafeAreaView>
+  );
+}
+
+function FixedFooter({ children }: PropsWithChildren) {
+  const colors = useColors();
+  return (
+    <View
+      style={{
+        padding: spacing.md,
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderColor: colors.border,
+        backgroundColor: colors.background,
+      }}
+    >
+      <View style={styles.column}>{children}</View>
+    </View>
+  );
+}
+
+export const listStyles = StyleSheet.create({
+  content: {
+    flexGrow: 1,
+    width: '100%',
+    maxWidth: 688,
+    alignSelf: 'center',
+    padding: spacing.lg,
+    paddingBottom: spacing.xxl,
+  },
+  header: { gap: spacing.lg, paddingBottom: spacing.lg },
+  footer: { gap: spacing.lg, paddingTop: spacing.lg },
+  separator: { height: spacing.lg },
+});
 
 export function PageHeading({ title, description }: { title: string; description: string }) {
   return (
@@ -83,14 +133,22 @@ export function Button({
   busy = false,
   destructive = false,
   disabled,
+  accessibilityLabel,
   accessibilityState,
   style,
   ...props
-}: PressableProps & { label: string; secondary?: boolean; busy?: boolean; destructive?: boolean }) {
+}: PressableProps & {
+  ref?: Ref<ComponentRef<typeof Pressable>>;
+  label: string;
+  secondary?: boolean;
+  busy?: boolean;
+  destructive?: boolean;
+}) {
   const colors = useColors();
   return (
     <Pressable
       {...props}
+      accessibilityLabel={accessibilityLabel ?? label}
       accessibilityRole="button"
       accessibilityState={{ ...accessibilityState, disabled: disabled || busy, busy }}
       disabled={disabled || busy}
@@ -101,7 +159,13 @@ export function Button({
         typeof style === 'function' ? style(state) : style,
       ]}
     >
-      {busy && <ActivityIndicator color={secondary ? colors.primary : colors.onPrimary} />}
+      {busy && (
+        <ActivityIndicator
+          accessible={false}
+          importantForAccessibility="no"
+          color={secondary ? colors.primary : colors.onPrimary}
+        />
+      )}
       <AppText
         variant="label"
         style={{ color: secondary ? colors.primary : colors.onPrimary, textAlign: 'center' }}

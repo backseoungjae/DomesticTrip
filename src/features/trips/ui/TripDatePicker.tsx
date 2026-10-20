@@ -1,11 +1,12 @@
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { useState } from 'react';
+import { useState, type ComponentRef, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Platform, useColorScheme } from 'react-native';
+import { Platform, ScrollView, View, useColorScheme } from 'react-native';
 
 import { getSeoulToday, type CalendarDate } from '@/shared/date/calendarDate';
 import { Dialog } from '@/shared/Dialog';
 import { Button } from '@/shared/ui';
+import { spacing } from '@/shared/theme';
 
 import { toPickerDate } from './tripDate';
 
@@ -15,12 +16,14 @@ export function TripDatePicker({
   title,
   onSelect,
   onClose,
+  returnFocusRef,
 }: {
   value: CalendarDate;
   minimum?: CalendarDate;
   title: string;
   onSelect: (date: CalendarDate) => void;
   onClose: () => void;
+  returnFocusRef?: RefObject<ComponentRef<typeof View> | null>;
 }) {
   const { t, i18n } = useTranslation();
   const scheme = useColorScheme();
@@ -44,17 +47,29 @@ export function TripDatePicker({
     );
   }
   return (
-    <Dialog visible title={title} onClose={onClose}>
-      <DateTimePicker
-        value={toPickerDate(selected)}
-        mode="date"
-        display="inline"
-        timeZoneName="Asia/Seoul"
-        minimumDate={minimum ? toPickerDate(minimum) : undefined}
-        locale={i18n.resolvedLanguage === 'ko' ? 'ko-KR' : 'en-US'}
-        themeVariant={scheme === 'dark' ? 'dark' : 'light'}
-        onValueChange={(_, date) => setSelected(getSeoulToday(date))}
-      />
+    <Dialog
+      visible
+      title={title}
+      onClose={onClose}
+      contentStyle={{ paddingHorizontal: spacing.sm }}
+      returnFocusRef={returnFocusRef}
+    >
+      <ScrollView
+        horizontal
+        style={{ flexGrow: 0 }}
+        contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
+      >
+        <DateTimePicker
+          value={toPickerDate(selected)}
+          mode="date"
+          display="inline"
+          timeZoneName="Asia/Seoul"
+          minimumDate={minimum ? toPickerDate(minimum) : undefined}
+          locale={i18n.resolvedLanguage === 'ko' ? 'ko-KR' : 'en-US'}
+          themeVariant={scheme === 'dark' ? 'dark' : 'light'}
+          onValueChange={(_, date) => setSelected(getSeoulToday(date))}
+        />
+      </ScrollView>
       <Button
         label={t('tripFlow.chooseDate')}
         onPress={() => {

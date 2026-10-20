@@ -4,7 +4,15 @@ import { useTranslation } from 'react-i18next';
 import { AppText, Button, Card } from '@/shared/ui';
 import { TourApiError } from '../services/tourApiError';
 
-export function PlaceFeedback({ error, retry }: { error?: Error | null; retry?: () => void }) {
+export function PlaceFeedback({
+  error,
+  retry,
+  retrying = false,
+}: {
+  error?: Error | null;
+  retry?: () => void;
+  retrying?: boolean;
+}) {
   const { t } = useTranslation();
   return (
     <Card>
@@ -16,7 +24,7 @@ export function PlaceFeedback({ error, retry }: { error?: Error | null; retry?: 
             : 'places.loading',
         )}
       </AppText>
-      {!!error && retry && <Button label={t('settings.retry')} onPress={retry} />}
+      {!!error && retry && <Button label={t('settings.retry')} busy={retrying} onPress={retry} />}
     </Card>
   );
 }

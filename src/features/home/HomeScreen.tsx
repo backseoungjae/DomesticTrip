@@ -14,7 +14,11 @@ export function HomeScreen() {
   const current = trips?.filter((trip) => getTripStatus(trip, today) === 'ongoing') ?? [];
   const next = trips?.find((trip) => getTripStatus(trip, today) === 'upcoming');
   return (
-    <Screen>
+    <Screen
+      footer={
+        <Button label={t('common.createTrip')} onPress={() => router.push('/trips/create')} />
+      }
+    >
       <AppText variant="caption">{t('appName')}</AppText>
       <PageHeading title={t('home.title')} description={t('home.description')} />
       {error || (loading && !trips) ? (
@@ -39,7 +43,6 @@ export function HomeScreen() {
           )}
         </>
       )}
-      <Button label={t('common.createTrip')} onPress={() => router.push('/trips/create')} />
     </Screen>
   );
 }

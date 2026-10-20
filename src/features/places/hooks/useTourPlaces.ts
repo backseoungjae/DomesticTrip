@@ -1,4 +1,4 @@
-import { queryOptions, useQuery } from '@tanstack/react-query';
+import { queryOptions, useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
 import type { TourLocale } from '../domain/TourPlace';
@@ -57,21 +57,41 @@ export function tourDetailOptions(language: TourLocale, contentId: string) {
   });
 }
 
-export function useTourPlaces(request: TourListRequest, enabled = true) {
-  return useQuery({ ...tourListOptions(request), enabled });
-}
-
-export function useTourPlaceSearch(request: TourSearchRequest) {
+export function useInfiniteTourPlaces(
+  request: Omit<TourListRequest, 'page'> & { keyword: string },
+) {
   const keyword = request.keyword.trim();
   const [debouncedKeyword, setDebouncedKeyword] = useState(keyword);
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedKeyword(keyword), 350);
     return () => clearTimeout(timer);
   }, [keyword]);
-  const settled = keyword === debouncedKeyword;
-  const query = useQuery({
-    ...tourSearchOptions({ ...request, keyword: debouncedKeyword }),
-    enabled: settled && debouncedKeyword.length > 0,
+  const searching = keyword.length > 0;
+  const settled = !searching || keyword === debouncedKeyword;
+  const { page: _page, ...listRequest } = normalizeTourList({
+    ...request,
+    category: searching ? undefined : request.category,
+  });
+  const searchRequest = normalizeTourSearch({
+    ...listRequest,
+    category: undefined,
+    keyword: debouncedKeyword,
+  });
+  const query = useInfiniteQuery({
+    ...cacheOptions,
+    queryKey: [
+      'tourPlaces',
+      'infinite',
+      searching ? 'search' : 'list',
+      searching ? searchRequest : listRequest,
+    ],
+    initialPageParam: 1,
+    queryFn: ({ pageParam, signal }) =>
+      searching
+        ? tourApiClient.search({ ...searchRequest, page: pageParam }, signal)
+        : tourApiClient.list({ ...listRequest, page: pageParam }, signal),
+    getNextPageParam: (lastPage) => (lastPage.hasNextPage ? lastPage.page + 1 : undefined),
+    enabled: settled,
   });
   // Do not display old results as matches for the new text while debouncing.
   return { ...query, data: settled ? query.data : undefined, isDebouncing: !settled };

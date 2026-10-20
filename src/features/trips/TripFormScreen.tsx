@@ -2,7 +2,7 @@ import { randomUUID } from 'expo-crypto';
 import { router, usePreventRemove } from 'expo-router';
 import { useRef, useState, type ComponentRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Keyboard, StyleSheet, TextInput } from 'react-native';
+import { Keyboard, StyleSheet, TextInput, View } from 'react-native';
 
 import type { StoredTrip } from '@/database/records';
 import { tripRepository } from '@/database/tripRepository';
@@ -62,6 +62,8 @@ export function TripFormScreen({ initialTrip }: { initialTrip?: StoredTrip }) {
   const savingRef = useRef(false);
   const repeatNavigation = useRef<(() => void) | null>(null);
   const titleInput = useRef<ComponentRef<typeof TextInput>>(null);
+  const startDateButton = useRef<ComponentRef<typeof View>>(null);
+  const endDateButton = useRef<ComponentRef<typeof View>>(null);
   const dirty =
     title !== baseline.title || startDate !== baseline.startDate || endDate !== baseline.endDate;
   const disablePrevention = usePreventRemove((dirty || saving) && !leaving, ({ repeat }) => {
@@ -171,6 +173,7 @@ export function TripFormScreen({ initialTrip }: { initialTrip?: StoredTrip }) {
         <Button
           secondary
           label={formatTripDate(startDate, i18n.language)}
+          ref={startDateButton}
           accessibilityLabel={`${t('tripFlow.startDate')}, ${formatTripDate(startDate, i18n.language)}`}
           disabled={saving}
           onPress={() => {
@@ -182,6 +185,7 @@ export function TripFormScreen({ initialTrip }: { initialTrip?: StoredTrip }) {
         <Button
           secondary
           label={formatTripDate(endDate, i18n.language)}
+          ref={endDateButton}
           accessibilityLabel={`${t('tripFlow.endDate')}, ${formatTripDate(endDate, i18n.language)}`}
           disabled={saving}
           onPress={() => {
@@ -230,6 +234,7 @@ export function TripFormScreen({ initialTrip }: { initialTrip?: StoredTrip }) {
       {picker && (
         <TripDatePicker
           key={picker}
+          returnFocusRef={picker === 'start' ? startDateButton : endDateButton}
           title={t(picker === 'start' ? 'tripFlow.startDate' : 'tripFlow.endDate')}
           value={picker === 'start' ? startDate : endDate}
           minimum={picker === 'end' ? startDate : mode === 'create' ? today : undefined}

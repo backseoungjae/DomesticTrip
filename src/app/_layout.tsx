@@ -11,6 +11,7 @@ import { QueryProvider } from '@/shared/query/QueryProvider';
 import { useColors } from '@/shared/theme';
 
 export const unstable_settings = { anchor: '(tabs)' };
+export { RouteErrorScreen as ErrorBoundary } from '@/shared/RouteErrorScreen';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();

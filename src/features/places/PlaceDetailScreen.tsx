@@ -44,6 +44,7 @@ export function PlaceDetailScreen({
           {detail.error && (
             <PlaceFeedback
               error={detail.error}
+              retrying={detail.isFetching}
               retry={() => {
                 void detail.refetch();
               }}
