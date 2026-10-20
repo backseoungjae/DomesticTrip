@@ -1,5 +1,5 @@
 import { useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 
 import { tripRepository } from '@/database/tripRepository';
@@ -10,6 +10,7 @@ function useFocusedData<T>(load: () => Promise<T>) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  const refreshRef = useRef<(() => Promise<boolean>) | null>(null);
   useFocusEffect(
     useCallback(() => {
       let active = true;
@@ -20,24 +21,30 @@ function useFocusedData<T>(load: () => Promise<T>) {
         setError(false);
         try {
           const next = await load();
-          if (active && current === request) setData(next);
+          if (!active || current !== request) return false;
+          setData(next);
+          return true;
         } catch {
           if (active && current === request) setError(true);
+          return false;
         } finally {
           if (active && current === request) setLoading(false);
         }
       };
+      refreshRef.current = refresh;
       void refresh();
       const listener = AppState.addEventListener('change', (state) => {
         if (state === 'active') void refresh();
       });
       return () => {
         active = false;
+        if (refreshRef.current === refresh) refreshRef.current = null;
         listener.remove();
       };
     }, [load, attempt]),
   );
-  return { data, loading, error, retry: () => setAttempt((value) => value + 1) };
+  const refresh = useCallback(() => refreshRef.current?.() ?? Promise.resolve(false), []);
+  return { data, loading, error, refresh, retry: () => setAttempt((value) => value + 1) };
 }
 
 export function useTrips() {

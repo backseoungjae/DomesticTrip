@@ -55,6 +55,7 @@ export function TripFormScreen({ initialTrip }: { initialTrip?: StoredTrip }) {
   const [picker, setPicker] = useState<'start' | 'end' | null>(null);
   const [issues, setIssues] = useState<readonly TripValidationIssue[]>([]);
   const [message, setMessage] = useState('');
+  const [occupiedDay, setOccupiedDay] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [discarding, setDiscarding] = useState(false);
@@ -88,6 +89,7 @@ export function TripFormScreen({ initialTrip }: { initialTrip?: StoredTrip }) {
     if (savingRef.current) return;
     Keyboard.dismiss();
     setMessage('');
+    setOccupiedDay(null);
     const input = { title, startDate, endDate };
     const validation = validateTripInput(input, mode);
     setIssues(validation.ok ? [] : validation.issues);
@@ -108,6 +110,7 @@ export function TripFormScreen({ initialTrip }: { initialTrip?: StoredTrip }) {
             .map((number) => t('tripFlow.day', { number }))
             .join(', ');
           setMessage(t('tripFlow.occupiedDays', { days }));
+          setOccupiedDay(result.affectedPlaces[0]?.dayNumber ?? null);
         }
         return;
       }
@@ -210,6 +213,19 @@ export function TripFormScreen({ initialTrip }: { initialTrip?: StoredTrip }) {
           {message}
         </AppText>
       )}
+      {occupiedDay !== null && initialTrip && (
+        <Button
+          secondary
+          label={t('itinerary.organizeDays', { day: occupiedDay })}
+          disabled={saving}
+          onPress={() =>
+            router.dismissTo({
+              pathname: '/trips/[tripId]',
+              params: { tripId: initialTrip.id, day: String(occupiedDay) },
+            })
+          }
+        />
+      )}
       <Button label={t('tripFlow.save')} busy={saving} onPress={() => void save()} />
       {picker && (
         <TripDatePicker
@@ -221,6 +237,7 @@ export function TripFormScreen({ initialTrip }: { initialTrip?: StoredTrip }) {
           onSelect={(date) => {
             setIssues([]);
             setMessage('');
+            setOccupiedDay(null);
             if (picker === 'start') {
               if (mode === 'create' && date < getSeoulToday())
                 setIssues([{ field: 'startDate', code: 'start_before_today' }]);
