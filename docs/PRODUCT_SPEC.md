@@ -32,7 +32,7 @@
 
 예를 들어 관광지를 검색할 때의 결과는 TanStack Query가 관리한다. 사용자가 그 관광지를 **여행 일정에 추가하는 순간**, 장소 이름·주소·이미지 등 화면 표시에 필요한 정보와 방문 순서를 SQLite에 저장한다. 그래서 TourAPI에 연결할 수 없어도 **이미 저장한 여행 일정은 열어볼 수 있다.**
 
-여러 화면이 같은 임시 상태를 공유해야 하는 상황이 생기면 Zustand를 검토한다. 처음부터 전역 상태 관리 라이브러리를 도입하지는 않는다. 구체적인 테이블과 Day 저장 방식은 구현 단계에서 결정한다.
+현재 Zustand는 사용하지 않는다. 선택한 Day와 모달 등의 임시 값은 컴포넌트 상태로 관리한다. SQLite에는 `trips`, `trip_places`, `app_settings`를 두며, 장소의 Day는 1부터 시작하는 `day_number`로 저장한다. 실제 방문 날짜는 출발일에서 계산하므로 날짜를 바꿔도 장소는 원래 Day 번호에 남는다. 기간 단축으로 사라지는 Day에 장소가 있으면 저장을 막고 먼저 정리하도록 안내한다.
 
 ## 3. 다국어 및 접근성
 
@@ -47,8 +47,8 @@
 화면마다 비슷한 UI를 다시 만들지 않도록 공통 기준을 둔다.
 
 - **디자인 토큰:** 색상, 글자 크기, 간격, 모서리 둥글기 등
-- **공통 컴포넌트:** Button, TextField, Card, Dialog, EmptyState, LoadingState 등
-- **기능별 컴포넌트:** TripCard, PlaceCard, DaySelector, TripPlaceRow 등
+- **공통 컴포넌트:** Button, Card, Dialog, EmptyState, PageHeading 등
+- **기능별 컴포넌트:** TripCard, TripPlaceCard, TripDayPicker, TripDatePicker 등
 
 실제로 여러 곳에서 쓰는 요소부터 공통화한다. 아직 사용하지 않는 컴포넌트까지 미리 만들지는 않는다.
 
